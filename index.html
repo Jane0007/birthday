@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>生日记录</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="description" content="记录亲友农历/公历生日，自动倒计时，一键加入系统日历">
+<meta name="theme-color" content="#fdf7f2">
+<!-- iOS 添加到主屏幕后全屏运行 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="生日记录">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🎂 生日记录</h1>
+  <p class="sub" id="todayLine">—</p>
+  <div class="acts">
+    <button class="icon-btn" id="btnCalendar" title="全部加入日历">📅</button>
+    <button class="icon-btn" id="btnSettings" title="设置">⚙️</button>
+  </div>
+</header>
+
+<main id="list"></main>
+
+<button class="fab" id="btnAdd" aria-label="新增">＋</button>
+
+<div class="sheet-mask" id="mask"></div>
+
+<!-- 编辑 / 新增 -->
+<section class="sheet" id="sheetEdit">
+  <div class="grabber"></div>
+  <h2 id="editTitle">新增生日</h2>
+
+  <div class="field">
+    <label>姓名</label>
+    <input type="text" id="fName" placeholder="例如：妈妈" maxlength="20">
+  </div>
+
+  <div class="field">
+    <label>关系（可选）</label>
+    <input type="text" id="fRelation" placeholder="例如：母亲" maxlength="10">
+  </div>
+
+  <div class="field">
+    <label>日历类型</label>
+    <div class="seg" id="segType">
+      <button type="button" data-v="lunar" class="on">农历</button>
+      <button type="button" data-v="solar">公历</button>
+    </div>
+  </div>
+
+  <!-- 农历输入 -->
+  <div id="boxLunar">
+    <div class="field">
+      <label>农历生日</label>
+      <div class="row">
+        <select id="fLMonth"></select>
+        <select id="fLDay"></select>
+      </div>
+    </div>
+    <div class="switch-row">
+      <span>闰月</span>
+      <label class="switch"><input type="checkbox" id="fLeap"><i></i></label>
+    </div>
+    <p class="hint">若某年没有该闰月，自动按同名普通月计算；若该月是小月而生日为三十，自动按廿九计算。</p>
+  </div>
+
+  <!-- 公历输入 -->
+  <div id="boxSolar" hidden>
+    <div class="field">
+      <label>公历生日</label>
+      <div class="row">
+        <select id="fSMonth"></select>
+        <select id="fSDay"></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>出生年份（可选，用于算年龄 / 生肖）</label>
+    <input type="number" id="fYear" placeholder="例如：1968" min="1900" max="2100" inputmode="numeric">
+  </div>
+
+  <div class="field">
+    <label>备注（可选）</label>
+    <textarea id="fNote" placeholder="喜欢的礼物、忌口…" maxlength="200"></textarea>
+  </div>
+
+  <div class="field">
+    <label>提前提醒</label>
+    <select id="fAdvance">
+      <option value="0">当天</option>
+      <option value="1" selected>提前 1 天</option>
+      <option value="3">提前 3 天</option>
+      <option value="7">提前 7 天</option>
+    </select>
+  </div>
+
+  <button class="btn btn-primary" id="btnSave">保存</button>
+  <button class="btn btn-plain" id="btnCancelEdit">取消</button>
+</section>
+
+<!-- 详情 -->
+<section class="sheet" id="sheetDetail">
+  <div class="grabber"></div>
+  <div class="detail-hero">
+    <div class="nm" id="dName">—</div>
+    <div class="cd" id="dCountdown">—</div>
+  </div>
+  <div id="dRows"></div>
+  <button class="btn btn-primary" id="btnToCalendar">加入系统日历（含提醒）</button>
+  <button class="btn btn-plain" id="btnEditThis">编辑</button>
+  <button class="btn btn-danger" id="btnDeleteThis">删除</button>
+  <button class="btn btn-plain" id="btnCloseDetail">关闭</button>
+</section>
+
+<!-- 设置 -->
+<section class="sheet" id="sheetSettings">
+  <div class="grabber"></div>
+  <h2>设置与备份</h2>
+
+  <div class="kv"><span>农历引擎</span><b id="sLunarEngine">—</b></div>
+  <div class="kv"><span>已记录</span><b id="sCount">—</b></div>
+  <div class="kv"><span>离线可用</span><b id="sOffline">—</b></div>
+
+  <div class="field" style="margin-top:14px">
+    <label>未来几年写入日历</label>
+    <select id="sYears">
+      <option value="3">3 年</option>
+      <option value="5" selected>5 年</option>
+      <option value="10">10 年</option>
+      <option value="20">20 年</option>
+    </select>
+  </div>
+
+  <button class="btn btn-plain" id="btnExport">导出备份（JSON）</button>
+  <button class="btn btn-plain" id="btnImport">导入备份</button>
+  <input type="file" id="fileImport" accept=".json,application/json" hidden>
+  <button class="btn btn-plain" id="btnDemo">填入示例数据</button>
+  <button class="btn btn-danger" id="btnClear">清空全部数据</button>
+  <button class="btn btn-plain" id="btnCloseSettings">关闭</button>
+
+  <p class="hint" style="margin-top:14px">
+    数据只存在这台手机的浏览器里，不会上传。建议偶尔导出一份备份存到「文件」App 或微信收藏。
+  </p>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script src="lunar.js"></script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

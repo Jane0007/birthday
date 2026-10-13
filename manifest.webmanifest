@@ -1,0 +1,20 @@
+{
+  "name": "生日记录",
+  "short_name": "生日记录",
+  "description": "记录亲友农历/公历生日，自动倒计时，一键加入系统日历",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf7f2",
+  "theme_color": "#fdf7f2",
+  "categories": ["lifestyle", "utilities"],
+  "icons": [
+    { "src": "icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

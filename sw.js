@@ -1,5 +1,5 @@
 /* Service Worker —— 离线可用 */
-var CACHE = 'birthday-record-v2';
+var CACHE = 'birthday-record-v3';
 var ASSETS = [
   './',
   './index.html',

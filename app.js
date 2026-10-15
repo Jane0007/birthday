@@ -10,13 +10,25 @@
     items: [],
     settings: { years: 5 },
     editingId: null,
-    detailId: null
+    detailId: null,
+    storageError: false
   };
 
   var $ = function (id) { return document.getElementById(id); };
 
   // ======================= 存储 =======================
+  /** 探测 localStorage 是否真正可写（隐私模式 / App 内置浏览器可能不可用） */
+  function storageWorks() {
+    try {
+      var k = '__bd_probe__';
+      localStorage.setItem(k, '1');
+      localStorage.removeItem(k);
+      return true;
+    } catch (e) { return false; }
+  }
+
   function loadAll() {
+    state.storageError = !storageWorks();
     try {
       var raw = localStorage.getItem(KEY);
       state.items = raw ? JSON.parse(raw) : [];
@@ -153,9 +165,32 @@
       (lr ? '　农历' + L.formatLunar(lr.month, lr.day, lr.isLeap) : '');
 
     if (!state.items.length) {
-      box.innerHTML = '<div class="empty"><div class="big">🎈</div>' +
-        '<p>还没有记录，点右下角 ＋ 添加生日</p></div>';
+      var warn = state.storageError ?
+        '<div class="storage-warn">⚠️ 当前浏览器无法保存数据（可能处于无痕/隐私模式）。' +
+        '添加的记录刷新后会丢失，建议用 Safari 或 Chrome 正常模式打开。</div>' : '';
+      box.innerHTML = warn +
+        '<div class="empty"><div class="big">🎈</div>' +
+        '<p class="t1">还没有生日记录</p>' +
+        '<p class="t2">把亲友的生日记在这里，自动帮你倒计时</p>' +
+        '<button type="button" class="btn btn-primary" id="emptyAdd">＋ 添加第一个生日</button>' +
+        '<button type="button" class="btn btn-plain" id="emptyDemo">先看看示例效果</button>' +
+        '<p class="tip">数据只保存在这台手机当前浏览器里。<br>' +
+        '之前添加过却看不到？可能是换了浏览器或从主屏幕图标打开（两者数据不互通），' +
+        '可回到原浏览器查看，或在「⚙️ 设置 → 导入备份」恢复。</p></div>';
+      [['emptyAdd', function () { openEditor(null); }],
+        ['emptyDemo', function () { loadDemo(); }]
+      ].forEach(function (pair) {
+        var el = document.getElementById(pair[0]);
+        if (el) el.addEventListener('click', pair[1]);
+      });
       return;
+    }
+
+    var storageWarn = '';
+    if (state.storageError) {
+      // 有数据但存储不可写：列表顶部提示（拼进 out，避免被 innerHTML 覆盖）
+      storageWarn =
+        '<div class="storage-warn">⚠️ 当前浏览器无法保存数据，修改刷新后会丢失。</div>';
     }
 
     var rows = state.items.map(function (it) {
@@ -184,7 +219,7 @@
       if (!g.html.length) return;
       out += '<div class="group-title">' + g.title + '</div>' + g.html.join('');
     });
-    box.innerHTML = out;
+    box.innerHTML = storageWarn + out;
 
     Array.prototype.forEach.call(box.querySelectorAll('.card'), function (el) {
       el.addEventListener('click', function () { showDetail(el.getAttribute('data-id')); });
@@ -488,6 +523,19 @@
     { name: '我', relation: '本人', type: 'solar', month: 6, day: 18, isLeap: false, birthYear: 1990, advance: 1, note: '' }
   ];
 
+  function loadDemo() {
+    DEMO.forEach(function (o) {
+      var c = {};
+      for (var k in o) c[k] = o[k];
+      c.id = uid();
+      state.items.push(c);
+    });
+    persist();
+    render();
+    refreshSettings();
+    toast('已填入示例数据');
+  }
+
   // ======================= 事件绑定 =======================
   function bind() {
     $('btnAdd').addEventListener('click', function () { openEditor(null); });
@@ -547,18 +595,7 @@
       e.target.value = '';
     });
 
-    $('btnDemo').addEventListener('click', function () {
-      DEMO.forEach(function (o) {
-        var c = {};
-        for (var k in o) c[k] = o[k];
-        c.id = uid();
-        state.items.push(c);
-      });
-      persist();
-      render();
-      refreshSettings();
-      toast('已填入示例数据');
-    });
+    $('btnDemo').addEventListener('click', loadDemo);
 
     $('btnClear').addEventListener('click', function () {
       if (!confirm('确定清空全部生日记录？建议先导出备份。')) return;
